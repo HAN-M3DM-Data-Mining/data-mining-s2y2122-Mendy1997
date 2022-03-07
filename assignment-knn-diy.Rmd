@@ -24,7 +24,7 @@ library(caret)
 
 
 ## Business Understanding
-text and code here
+We will be using 4 variables to observe whether an office has been used or not. However, the table provides too much information - so, irrelevant information will be excluded.
 
 ## Data Understanding
 ```{r}
@@ -36,10 +36,13 @@ str(rawDF)
 
 ## Data Preparation
 
+The variable 'date' does not contain any important information, thus will be excluded. 
 ```{r}
 cleanDF <- rawDF[-1]
 head(cleanDF)
 ```
+
+We will use this formula to see how many offices are occupied or not, (1: occupancy, 0: not occupied)
 
 ```{r}
 cntDiag <- table(cleanDF$Occupancy)
@@ -99,9 +102,10 @@ testDF_labels <- cleanDF[4001:8143, 7]
 ## Modeling
 
 ```{r}
-cleanDF_test_pred <- knn(train = as.matrix(trainDF_feat), test = as.matrix(testDF_feat), cl = as.matrix(trainDF_labels), k = 57)
+cleanDF_test_pred <- knn(train = as.matrix(trainDF_feat), test = as.matrix(testDF_feat), cl = as.matrix(trainDF_labels), k = 21)
 head(cleanDF_test_pred)
 ```
+
 
 
 ## Evaluation and Deployment
