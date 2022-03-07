@@ -1,13 +1,6 @@
 ---
-title: "Assigment - kNN DIY"
-author:
-  - name author here - Mendy
-  - name reviewer here - Eilis
-date: "`r format(Sys.time(), '%d %B, %Y')`"
-output:
-   html_notebook:
-    toc: true
-    toc_depth: 2
+title: "R Notebook"
+output: html_notebook
 ---
 
 
@@ -18,28 +11,25 @@ library(class)
 library(caret)
 ```
 
----
+# Business understanding
+We will be using 4 variables to observe whether an office has been used or not. However, the table provides too much information - so, irrelevant information will be excluded.
 
-
-
-
-## Business Understanding
-text and code here
-
-## Data Understanding
+# Data understanding
 ```{r}
 url <- "https://raw.githubusercontent.com/HAN-M3DM-Data-Mining/data-mining-s2y2122-Mendy1997/master/datasets/KNN-occupancy.csv"
 rawDF <- read_csv(url)
 str(rawDF)
 ```
 
-
-## Data Preparation
+# Data preparation
+The variable 'date' does not contain any important information, thus will be excluded. 
 
 ```{r}
 cleanDF <- rawDF[-1]
 head(cleanDF)
 ```
+
+We will use this formula to see how many offices are occupied or not, (1: occupancy, 0: not occupied)
 
 ```{r}
 cntDiag <- table(cleanDF$Occupancy)
@@ -50,6 +40,9 @@ cntDiag
 ```{r}
 propDiag
 ```
+
+We will now change the "1" and "0" into "occupancy" and "not occupied"
+
 ```{r}
 cleanDF$diagnosis <- factor(cleanDF$Occupancy, levels = c("1", "0"), labels = c("Occupancy", "Not occupied")) %>% relevel("Not occupied")
 head(cleanDF, 10)
@@ -57,6 +50,7 @@ head(cleanDF, 10)
 ```{r}
 summary(cleanDF[c("Temperature", "Humidity", "Light", "CO2")])
 ```
+
 ```{r}
 normalize <- function(x) { # Function takes in a vector
   return ((x - min(x)) / (max(x) - min(x))) # distance of item value - minimum vector value divided by the range of all vector values
@@ -85,29 +79,24 @@ cleanDF_n <- sapply(2:nCols-1,
 
 summary(cleanDF_n[c("Temperature", "Humidity", "Light", "CO2", "HumidityRatio")])
 ```
+
+# Training the data
+
 ```{r}
 trainDF_feat <- cleanDF_n[1:4000, 7]
 testDF_feat <- cleanDF_n[4001:8143, 7]
 ```
-```{r}
-trainDF_labels <- cleanDF[1:4000, 7]
-testDF_labels <- cleanDF[4001:8143, 7]
-```
 
-
-
-## Modeling
+# Modeling
 
 ```{r}
 cleanDF_test_pred <- knn(train = as.matrix(trainDF_feat), test = as.matrix(testDF_feat), cl = as.matrix(trainDF_labels), k = 57)
 head(cleanDF_test_pred)
 ```
 
-
-## Evaluation and Deployment
+# Evaluation and Deployment
 
 ```{r}
-confusionMatrix(cleanDF_test_pred, testDF_labels[[1]], positive = NULL, dnn = c("Prediction", "True"))
+confusionMatrix(cleanDF_test_pred, testDF_labels[[1]], positive = occupancy, dnn = c("Prediction", "True"))
 ```
-
-
+reviewer adds suggestions for improving the model
