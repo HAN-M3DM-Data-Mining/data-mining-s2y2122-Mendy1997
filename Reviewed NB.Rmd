@@ -1,0 +1,170 @@
+---
+title: "Assigment - Naive Bayes DIY"
+author:
+  - name author here - Eilis
+  - name reviewer here - Mendy 
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+   html_notebook:
+    toc: true
+    toc_depth: 2
+---
+
+```{r}
+library(tidyverse)
+library(tm)
+library(caret)
+library(RColorBrewer)
+library(wordcloud)
+library(e1071)
+library(dbplyr)
+library(dplyr)
+library(NLP)
+library(slam)
+library(magrittr)
+library(lattice)
+library(ggplot2)
+```
+---
+
+Choose a suitable dataset from [this](https://github.com/HAN-M3DM-Data-Mining/assignments/tree/master/datasets) folder and train your own Naive Bayes model. Follow all the steps from the CRISP-DM model.
+
+
+## Business Understanding
+#The data is about real and fake news. I will build a model to predict based on the words if it is a fake or real article. The data is large and messy so I have to do some cleaning.
+
+
+```{r}
+url <- "https://raw.githubusercontent.com/HAN-M3DM-Data-Mining/data-mining-s2y2122-EilisLerpetre/master/datasets/NB-fakenews.csv"
+rawdata <- read.csv(url)
+```
+
+```{r}
+head(rawdata)
+```
+
+
+```{r}
+rawdata <- rawdata[-1]
+rawdata <- rawdata[-1]
+rawdata <- rawdata[-1]
+```
+
+```{r}
+rawdata <- mutate(rawdata,label = recode(label,"0" = "Real","1" = "Fake"))
+rawdata$label <- rawdata$label %>%  factor %>% relevel("Fake")
+class(rawdata$label)
+```
+
+
+```{r}
+Real <- rawdata %>% filter(label == "Real")
+Fake <- rawdata %>% filter(label == "Fake")
+```
+
+```{r}
+wordcloud(Fake$text,max.words = 25, scale = c(4,0.8), colors = c("indianred1","indianred2","indianred3","indianred"))
+wordcloud(Real$text,max.words = 25, scale = c(4,0.8),colors = c("lightsteelblue1","lightsteelblue2","lightsteelblue3","lightsteelblue"))
+```
+
+
+
+```{r}
+rawCorpus <- Corpus(VectorSource(rawdata$text))
+inspect(rawCorpus[1:3])
+```
+```{r} 
+cleanCorpus <- rawCorpus %>% tm_map(tolower) %>% tm_map(removeNumbers) 
+``` 
+
+ 
+
+```{r} 
+cleanCorpus <- cleanCorpus %>% tm_map(tolower) %>% tm_map(removeWords,stopwords()) %>% tm_map(removePunctuation) 
+``` 
+
+ 
+
+ 
+
+```{r} 
+cleanCorpus <- cleanCorpus %>% tm_map(stripWhitespace) 
+``` 
+
+```{r}
+tibble(Raw = rawCorpus$content[1:3],Clean = cleanCorpus$content[1:3])
+```
+
+```{r}
+```{r}
+trainIndex <- createDataPartition(RawData$label,p = .75,list = FALSE,times = 1)
+trainDataFrame <- RawData[trainIndex,] 
+```
+```
+
+```{r}
+cleanDTM <- cleanCorpus %>% DocumentTermMatrix()
+inspect(cleanDTM)
+```
+
+```{r}
+set.seed(1234)
+trainIndex <- createDataPartition(rawdata$label,p = .75,list = FALSE,times = 1)
+```
+
+```{r}
+trainDataFrame <- rawdata[trainIndex,]
+```
+
+
+```{r}
+testDataFrame <- rawdata[-trainIndex,]
+trainCorpus <- cleanCorpus[trainIndex]
+testCorpus <- cleanCorpus[-trainIndex]
+trainDTM <- cleanDTM[trainIndex,]
+testDTM <- cleanDTM[-trainIndex,]
+```
+
+
+```{r}
+freqWords <- trainDTM %>% findFreqTerms(5)
+trainDTM <- DocumentTermMatrix(trainCorpus,list(dictionary = freqWords))
+testDTM <- DocumentTermMatrix(testCorpus,list(dictionary = freqWords))
+```
+
+
+```{r}
+convert_counts <- function(x){
+  x <- ifelse(x > 0,1,0) %>% factor(levels = c(0,1),labels = c("No","Yes"))}
+nColsDTM <- dim(trainDTM)[2]
+trainDTM <- apply(trainDTM,MARGIN = 2,convert_counts)
+testDTM <- apply(testDTM,MARGIN = 2,convert_counts)
+head(trainDTM[,1:10])
+```
+
+#Modeling and Evaluation
+```{r}
+nbayesModel <- naiveBayes(trainDTM,trainDataFrame$label,laplace = 1)
+```
+
+
+```{r}
+predVec <- predict(nbayesModel,testDTM)
+confusionMatrix(predVec,testDataFrame$label,positive = "Fake",dnn = c("Prediction","True"))
+```
+
+
+# the error I found was in line 51, and I needed to load some packages. 
+
+
+
+
+
+
+
+
+
+
+
+
+
