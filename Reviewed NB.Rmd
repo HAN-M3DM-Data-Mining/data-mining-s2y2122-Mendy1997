@@ -14,16 +14,8 @@ output:
 library(tidyverse)
 library(tm)
 library(caret)
-library(RColorBrewer)
 library(wordcloud)
 library(e1071)
-library(dbplyr)
-library(dplyr)
-library(NLP)
-library(slam)
-library(magrittr)
-library(lattice)
-library(ggplot2)
 ```
 ---
 
@@ -40,7 +32,7 @@ rawdata <- read.csv(url)
 ```
 
 ```{r}
-head(rawdata)
+rawdata <- rawdata[-c(2:17000),]
 ```
 
 
@@ -154,7 +146,13 @@ confusionMatrix(predVec,testDataFrame$label,positive = "Fake",dnn = c("Predictio
 ```
 
 
-# the error I found was in line 51, and I needed to load some packages. 
+#Notes
+#She forgot the step rawdata <- rawdata[-c(2:17000),] before heading on to data preparation.
+#There was an error in line 50, which caused erros in line 56 and 60 too. My solution was to adapt the codes to rawdata <- mutate(rawdata,label = recode(label,"0" = "Real","1" = "Fake"))
+# rawdata$label <- rawdata$label %>%  factor %>% relevel("Fake")
+# class(rawdata$label)
+# she was missing the code cleanCorpus <- cleanCorpus %>% tm_map(stripWhitespace) after line 83
+# in line 104 the .75 was missing after the p.
 
 
 
