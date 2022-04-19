@@ -1,0 +1,141 @@
+## Import the data
+turnover <- read.csv("561432Turnover.csv")
+head(turnover)
+
+
+## create subsets of data
+library(tidyverse)
+under_40 <- turnover %>% filter(Age<40)
+at_40 <- turnover %>% filter(Age==40)
+over_40 <- turnover %>% filter(Age>40)
+
+## regression models
+## omit weight beacuse of multicolinearity
+fit1 <- lm(Months_active ~Disciplined+Age+Absent_hours+Children+Height+BMI+Social_drinker, data=under_40)
+summary(fit1)
+car::vif(fit1)
+
+## fit 2
+cor(at_40)
+fit2 <- lm(Months_active ~Disciplined+Absent_hours+Height+BMI, data=at_40)
+summary(fit2)
+car::vif(fit2)
+
+## fit 3
+fit3 <- lm(Months_active ~Disciplined+Age+Absent_hours+Children+Height+BMI+Social_drinker, data=over_40)
+summary(fit3)
+car::vif(fit3)
+
+
+### tabulate the tables
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+tab_model(fit1, fit2, fit3, show.se = TRUE, show.stat = TRUE)
+
+
+### linear regression for cancer rates
+cancer_rates <- read.csv("561432cancer_rates.csv")
+head(cancer_rates)
+
+## model before outliers
+cancer_fit <- lm(CancerDeaths~povertyPercent+medIncome+popEst2015+PercentMarried+MedianAge+AvgHouseholdSize, data = cancer_rates)
+summary(cancer_fit)
+
+
+## check outliers
+(death_out <- boxplot.stats(cancer_rates$CancerDeaths)$out)
+(pov_out <- boxplot.stats(cancer_rates$povertyPercent)$out)
+(med_out <- boxplot.stats(cancer_rates$medIncome)$out)
+(age_out <- boxplot.stats(cancer_rates$MedianAge)$out)
+(pop_out <- boxplot.stats(cancer_rates$popEst2015)$out)
+(mar_out <- boxplot.stats(cancer_rates$PercentMarried)$out)
+(avg_out <- boxplot.stats(cancer_rates$AvgHouseholdSize)$out)
+
+## omit outliers
+cancer_rates<- cancer_rates[-which(cancer_rates$CancerDeaths %in% death_out),]
+cancer_rates<- cancer_rates[-which(cancer_rates$povertyPercent %in% pov_out),]
+cancer_rates<- cancer_rates[-which(cancer_rates$medIncome %in% med_out),]
+cancer_rates<- cancer_rates[-which(cancer_rates$MedianAge %in% age_out),]
+cancer_rates<- cancer_rates[-which(cancer_rates$popEst2015 %in% pop_out),]
+cancer_rates<- cancer_rates[-which(cancer_rates$PercentMarried %in% mar_out),]
+cancer_rates<- cancer_rates[-which(cancer_rates$AvgHouseholdSize %in% avg_out),]
+
+## model after rwemoving outliers
+cancer_fit1 <- lm(CancerDeaths~povertyPercent+medIncome+popEst2015+PercentMarried+MedianAge+AvgHouseholdSize, data = cancer_rates)
+summary(cancer_fit1)
+tab_model(cancer_fit, cancer_fit1,show.se = TRUE, show.stat = TRUE )
+
+
+### question 3
+diamonds_data <- read.csv("561432diamonds.csv")
+head(diamonds_data)
+
+library(caret)
+set.seed(123)
+index1 <- createDataPartition(diamonds_data$price, p = 0.7, list = FALSE)
+train_df <- diamonds_data[index1,]
+test_df <- diamonds_data[-index1,]
+
+## fit a random forest model
+l_fit <- lm(price~carat+depth+continent, data = train_df)
+summary(l_fit)
+tab_model(l_fit, show.se = TRUE, show.stat = TRUE )
+## predict the test set
+t_pred <- l_fit %>% predict(test_df)
+library(Metrics)
+## calculate mse and mad
+mse(test_df$price, t_pred)
+mad(test_df$price)
+mad(t_pred)
+MAE(test_df$price, t_pred)
+rsq <- function (x, y) cor(x, y) ^ 2
+rsq(test_df$price,t_pred)
+
+## Question 4
+life_expec <- read.csv("561432Life_Expectancy.csv")
+head(life_expec)
+
+attach(life_expec)
+life_fit <- lm(Life_expectancy~HIV+BMI+GDP+Schooling, data = life_expec)
+summary(life_fit)
+
+## non linear relationships
+ggplot(life_expec, aes(BMI,Life_expectancy)) + geom_point() + geom_smooth()+ggtitle("BMI non linear relationship with life expectancy")
+ggplot(life_expec, aes(HIV,Life_expectancy)) + geom_point() + geom_smooth()+ggtitle("HIV non linear relationship with life expectancy")
+ggplot(life_expec, aes(GDP,Life_expectancy)) + geom_point() + geom_smooth()+ggtitle("GDP non linear relationship with life expectancy")
+
+
+## non linear transformations
+life_poly <- lm(Life_expectancy~poly(HIV,3)+poly(BMI,3)+poly(GDP, 3)+Schooling, data = life_expec)
+summary(life_poly)
+
+tab_model(life_fit, life_poly,  show.se = TRUE, show.stat = TRUE )
+
+#### question 5
+teaching_df <- read.csv("561432TeachingRatings.csv")
+head(teaching_df)
+
+## fit a model
+attach(teaching_df)
+ev_fit <- lm(eval~age+native+minority+gender+tenure, data = teaching_df)
+summary(ev_fit)
+tab_model(ev_fit, show.se = TRUE, show.stat = TRUE )
+
+## impute missing values
+library(naniar)
+teaching_df %>% miss_var_summary()
+teaching_df <- teaching_df %>% mutate_if(is.character, as.factor)
+## impute missing values
+library(missForest)
+tech_imput <- missForest(teaching_df)
+
+summary(teaching_df)
+summary(tech_imput$ximp)
+
+teach_imput <- tech_imput$ximp
+
+## fit model
+fit5 <- lm(eval~age+native+minority+gender+tenure, data = teach_imput)
+summary(fit5)
+tab_model(fit5, show.se = TRUE, show.stat = TRUE )
